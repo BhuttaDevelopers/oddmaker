@@ -5,6 +5,8 @@ from . import views
 from django.urls import path
 from django.urls import path
 from .views import om_data_letter_grades_view, download_pdf
+from django.conf.urls.static import static
+from django.conf import settings
 
 urlpatterns = [
     path('data/', views.om_data_list, name='data_list'),
@@ -15,3 +17,7 @@ urlpatterns = [
     path('TheOddsMaker/', views.om_data_TheOddsMaker_view, name='TheOddsMaker'),  # Letter grades view
     path('download_pdf/', download_pdf, name='download_pdf'),  # Add this line TheOddsmaker_view
 ]
+
+if settings.DEBUG:  # Only serve files this way in development
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
