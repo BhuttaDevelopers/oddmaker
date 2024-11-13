@@ -1,0 +1,37 @@
+{# templates/om/omdata_changelist.html #}
+{% extends "admin/change_list.html" %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .object-tools {
+            display: flex; /* Use flexbox for horizontal layout */
+            gap: 2px; /* Space between buttons */
+            list-style-type: none; /* Remove bullet points */
+            padding: 0; /* Remove default padding */
+            
+        }
+
+        .object-tools a.button {
+            padding: 8px 12px; /* Add padding for buttons */
+            text-decoration: none; /* Remove underline from links */
+            background-color: #747474; /* Bootstrap primary color */
+            color: white; /* Text color */
+            border-radius: 10px; /* Rounded corners */
+            transition: background-color 0.3s; /* Smooth background color transition */
+            margin-right: 150px;
+        }
+
+        .object-tools a.button:hover {
+            background-color: #417690; /* Darker shade on hover */
+        }
+    </style>
+{% endblock %}
+
+{% block object-tools %}
+    {{ block.super }}
+    <div class="object-tools">
+        <a href="{% url 'admin:download_excel' %}" class="button">Download Excel</a>
+        <a href="{% url 'admin:upload_data' %}" class="button">Upload Data</a>
+    </div>
+{% endblock %}

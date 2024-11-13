@@ -1,0 +1,464 @@
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data List</title>
+    <style>
+        body {
+            background-color: black;
+            color: #C7BA00;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+        .search-columns {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .search-column {
+            flex: 1;
+            margin-right: 20px;
+        }
+        .search-column:last-child {
+            margin-right: 0;
+        }
+        .search-column h3 {
+            margin-top: 0;
+        }
+        .search-column label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #C7BA00;
+            padding: 8px;
+            text-align: left;
+            height: 40px;
+            overflow: hidden;
+            white-space: normal;
+        }
+        th {
+            cursor: pointer;
+            background-color: #333;
+            word-wrap: break-word;
+            font-weight: bold;
+        }
+        tr {
+            background-color: black;
+        }
+        td {
+            color: #C7BA00;
+        }
+        th:nth-child(n+5), td:nth-child(n+5) {
+            width: 60px;
+        }
+        th:nth-child(-n+4), td:nth-child(-n+4) {
+            width: auto;
+        }
+        th {
+            height: auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .download-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .searchbtn {
+            -moz-border-radius: 3px;
+            -webkit-border-radius: 3px;
+            border: none;
+            border-radius: 3px;
+            color: #FFFFFF;
+            display: inline-block;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15px;
+            font-weight: 400;
+            height: 40px;
+            margin: 0px 10px;
+            min-width: 180px;
+            padding: 0px 20px;
+            text-align: center;
+            text-transform: uppercase;
+            background-color: #25AAE1;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Display Format Form (Separate from the Main Search Form) -->
+<form method="GET" action="{% url 'data_list' %}">
+    <div class="search-columns">
+        <!-- Display Formats -->
+        <div class="search-column">
+            <h3>Display Formats</h3>
+            <label>
+                <input type="radio" name="display_format" value="oddsmaker_score" 
+                       {% if display_format == "oddsmaker_score" %}checked{% endif %} 
+                       onchange="this.form.submit();">
+                Oddsmaker Score
+            </label>
+            <label>
+                <input type="radio" name="display_format" value="letter_grades" 
+                       {% if display_format == "letter_grades" %}checked{% endif %} 
+                       onchange="this.form.submit();">
+                Letter Grades
+            </label>
+            <label>
+                <input type="radio" name="display_format" value="risk_profiles" 
+                       {% if display_format == "risk_profiles" %}checked{% endif %} 
+                       onchange="this.form.submit();">
+                Risk Profile
+            </label>
+            <label>
+                <input type="radio" name="display_format" value="multiple_predictor" 
+                       {% if display_format == "multiple_predictor" %}checked{% endif %} 
+                       onchange="this.form.submit();">
+                Multiple Predictor
+            </label><br><br>
+            <h4>Downloads</h4>
+            <a style="color:white;" href="{% url 'TheOddsMaker' %}">OddsMaker Score</a><br><br>
+            <a style="color:white;" href="{% url 'letter_grades' %}">Letter Grades</a>
+            <h4>Search by Symbol</h4>
+            <input style="border-radius: 5px; height: 20px;" type="text" name="symbol" value="{{ request.GET.symbol }}">
+        </div>
+
+        <!-- Long Idea Searches Checkboxes -->
+        <div class="search-column">
+            <h3>Long Idea Searches</h3>
+            <label><input type="checkbox" name="upside_50" {% if request.GET.upside_50 %}checked{% endif %}> 50% Upside</label>
+            <label><input type="checkbox" name="great_but_hated" {% if request.GET.great_but_hated %}checked{% endif %}> Great But Hated</label>
+            <label><input type="checkbox" name="gold_mine" {% if request.GET.gold_mine %}checked{% endif %}> GoldMine</label>
+            <label><input type="checkbox" name="berkshire_brain" {% if request.GET.berkshire_brain %}checked{% endif %}> Berkshire's Brain</label>
+            <label><input type="checkbox" name="safety_net" {% if request.GET.safety_net %}checked{% endif %}> SafetyNet</label>
+            <label><input type="checkbox" name="private_equity_model" {% if request.GET.private_equity_model %}checked{% endif %}> Private Equity Model</label>
+            <label><input type="checkbox" name="bullet_proof" {% if request.GET.bullet_proof %}checked{% endif %}> BulletProof</label>
+            <label><input type="checkbox" name="hidden_innovators" {% if request.GET.hidden_innovators %}checked{% endif %}> Hidden Innovators</label>
+            <label><input type="checkbox" name="long_option_ideas" {% if request.GET.long_option_ideas %}checked{% endif %}> Long Option Ideas</label>
+            <label><input type="checkbox" name="share_repurchases" {% if request.GET.share_repurchases %}checked{% endif %}> Share Repurchases</label>
+        </div>
+
+        <!-- Short Idea Searches Checkboxes -->
+        <div class="search-column">
+            <h3>Short Idea Searches</h3>
+            <label><input type="checkbox" name="greater_90" {% if request.GET.greater_90 %}checked{% endif %}> 10% Upside</label>
+            <label><input type="checkbox" name="short_interest" {% if request.GET.short_interest %}checked{% endif %}> Short Interest</label>
+            <label><input type="checkbox" name="liquid_loved_late" {% if request.GET.liquid_loved_late %}checked{% endif %}> Liquid, Loved & Late</label>
+            <label><input type="checkbox" name="LandSlide_Risk" {% if request.GET.LandSlide_Risk %}checked{% endif %}> LandslideRisk</label>
+            <label><input type="checkbox" name="junk_yard" {% if request.GET.junk_yard %}checked{% endif %}> JunkYard</label>
+            <label><input type="checkbox" name="accounting_trouble" {% if request.GET.accounting_trouble %}checked{% endif %}> Accounting Trouble</label>
+            <label><input type="checkbox" name="most_expensive" {% if request.GET.most_expensive %}checked{% endif %}> Most Expensive</label>
+        </div>
+    </div>
+    
+    <!-- Submit Button -->
+    <center><button class="searchbtn" type="submit">Search</button></center>
+    
+    <br>
+    <center>
+        <p id="note">
+            Higher Quality Business (2x Average) + Attractive Valuation
+        </p>
+    </center>
+</form>
+
+<!-- Data Table -->
+<table id="data-table" border="1">
+    <thead>
+        <tr>
+            {% for field_name in field_names %}
+                <th onclick="sortTable({{ forloop.counter0 }})">
+                    {{ field_labels|get_item:field_name|safe|linebreaksbr }}
+                </th>
+            {% endfor %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in page_obj %}
+            <tr>
+                {% for field_name in field_names %}
+                    <td class="{% if field_name == 'Score' %}score{% endif %}">
+                        {% if field_name == 'Score' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:0 }}
+                        {% elif field_name == 'One_Year_Growth' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'Short_Interest' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'FCF_EV_Trailing' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'FCF_EV_Farward' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'Revenue_GrowthFarward' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'Multiple_Predictor' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'EV_EBITDA_Trailing' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'EV_EBITDA_Forward' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'EV_Sales_Trailing' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'EV_Sales_Farward2' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'FCFMarginTrailing' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'FCFMarginFarward' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'ROE' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'ROIC' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                        {% elif field_name == 'Beta' %}
+                            {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                        {% elif field_name == 'Price' or field_name == 'OM_Target' or field_name == 'SS' %}
+                            {{ item|get_attr:field_name|to_decimal|format_currency }}
+                        {% else %}
+                            {{ item|get_attr:field_name }}
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    // Function to sort the table based on a column index
+    function sortTable(columnIndex) {
+        const table = document.getElementById("data-table");
+        const tbody = table.tBodies[0];
+        const rows = Array.from(tbody.querySelectorAll("tr"));
+        let isAscending = table.getAttribute(`data-sort-asc-${columnIndex}`) === "true";
+
+        // Toggle the sorting order for the current column
+        isAscending = !isAscending;
+        table.setAttribute(`data-sort-asc-${columnIndex}`, isAscending);
+
+        // Sort rows based on the content of the column
+        rows.sort((a, b) => {
+            const cellA = a.cells[columnIndex].textContent.trim();
+            const cellB = b.cells[columnIndex].textContent.trim();
+
+            // Convert to number if possible for numeric sorting
+            const aValue = isNaN(cellA) ? cellA : parseFloat(cellA) || 0;
+            const bValue = isNaN(cellB) ? cellB : parseFloat(cellB) || 0;
+
+            // Sort in ascending or descending order
+            return isAscending ? (aValue > bValue ? 1 : -1) : (aValue < bValue ? 1 : -1);
+        });
+
+        // Append sorted rows back into the tbody
+        rows.forEach(row => tbody.appendChild(row));
+    }
+</script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const fieldTextMap = {
+            'upside_50': 'Stocks that Wall Street Analysts have at least 50% upside to target from current price',
+            'great_but_hated': 'Higher quality or 2x average + attractive valuations',
+            'gold_mine': 'Cross referencing highest ROE + Lowest EV/EBITDA multiples',
+            'berkshire_brain': 'Based on Berkshire’s Past Buys a Potential Berkshires watchlist',
+            'safety_net': 'Top 50% of stock market cash on balance sheet + 20% cheapest on valuation',
+            'private_equity_model': 'A potential Private Equity watchlist targeting stocks quality & cheap & clean balance sheet',
+            'bullet_proof': 'Strong balance sheets + bottom 30% cash flow multiples',
+            'hidden_innovators': 'Companies making bold transformational or overinvestment bets + w/ + cash flow',
+            'long_option_ideas': 'Top 30% beta w bottom 30% cash flow multiples',
+            'share_repurchases': 'Sort High/Low drop-down menu',
+            'greater_90': 'Stocks that Wall Street Analysts have at 10% or less upside to target from current price',
+            'short_interest': 'Sort High/Low drop-down menu',
+            'liquid_loved_late': 'Lowest 5% Oddsmaker Scores',
+            'LandSlide_Risk': 'Unusual trading with downside potential',
+            'junk_yard': 'Top 20% price/sales + bottom 20% ROE',
+            'accounting_trouble': 'High Short Interest + large cash flow differentials',
+            'most_expensive': 'Top 20% forward multiples and lower profitability'
+        };
+
+        const note = document.getElementById('note');
+
+        function updateNote() {
+            const checkedFields = Object.keys(fieldTextMap).filter(fieldId => 
+                document.querySelector(`input[name="${fieldId}"]`)?.checked
+            );
+
+            note.textContent = checkedFields.length > 0 ? fieldTextMap[checkedFields[0]] : 'No relevant fields selected';
+            note.style.display = 'block';
+        }
+
+        Object.keys(fieldTextMap).forEach(fieldId => {
+            const checkbox = document.querySelector(`input[name="${fieldId}"]`);
+            if (checkbox) {
+                checkbox.addEventListener('change', updateNote);
+            }
+        });
+
+        updateNote();
+
+        const deciles = {{ deciles|safe }};
+        const scoreColumnIndex = 3;
+
+        function getCellBackgroundColor(cellText, columnIndex) {
+            let backgroundColor = "";
+            if (columnIndex === scoreColumnIndex) {
+                const score = parseFloat(cellText);
+                if (!isNaN(score)) {
+                    if (score >= deciles[8]) backgroundColor = "#006837";
+                    else if (score >= deciles[7]) backgroundColor = "#1A9850";
+                    else if (score >= deciles[6]) backgroundColor = "#66BD63";
+                    else if (score >= deciles[5]) backgroundColor = "#B2E7A3";
+                    else if (score >= deciles[4]) backgroundColor = "#D9EF8B";
+                    else if (score >= deciles[3]) backgroundColor = "#FEE08B";
+                    else if (score >= deciles[2]) backgroundColor = "#FDAE61";
+                    else if (score >= deciles[1]) backgroundColor = "#F46D43";
+                    else backgroundColor = "#D73027";
+                }
+            } else if (columnIndex >= 8 && columnIndex <= 15) {
+                switch (cellText) {
+                    case "A+": backgroundColor = "#006837"; break;
+                    case "A": backgroundColor = "#1A9850"; break;
+                    case "A-": backgroundColor = "#3AB87B"; break;
+                    case "B+": backgroundColor = "#66BD63"; break;
+                    case "B": backgroundColor = "#7EC391"; break;
+                    case "B-": backgroundColor = "#A6D96A"; break;
+                    case "C+": backgroundColor = "#B2E7A3"; break;
+                    case "C": backgroundColor = "#D9EF8B"; break;
+                    case "C-": backgroundColor = "#E6FBC2"; break;
+                    case "D+": backgroundColor = "#FEE08B"; break;
+                    case "D": backgroundColor = "#FCF0C3"; break;
+                    case "D-": backgroundColor = "#FDAE61"; break;
+                    case "F+": backgroundColor = "#F46D43"; break;
+                    case "F": backgroundColor = "#D73027"; break;
+                    case "F-": backgroundColor = "#A50026"; break;
+                    default: backgroundColor = "";
+                }
+            }
+            return backgroundColor;
+        }
+
+        document.querySelectorAll("tbody tr").forEach(row => {
+            row.querySelectorAll("td").forEach((cell, index) => {
+                const backgroundColor = getCellBackgroundColor(cell.textContent.trim(), index);
+                if (backgroundColor) cell.style.backgroundColor = backgroundColor;
+            });
+        });
+    });
+</script>
+
+</body>
+</html>
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Mapping each checkbox ID to the corresponding display text
+        const fieldTextMap = {
+            'upside_50': 'Stocks that Wall Street Analysts have at least 50% upside to target from current price',
+            'great_but_hated': 'Higher quality or 2x average + attractive valuations',
+            'gold_mine': 'Cross referencing highest ROE + Lowest EV/EBITDA multiples',
+            'berkshire_brain': 'Based on Berkshire’s Past Buys a Potential Berkshires watchlist',
+            'safety_net': 'Top 50% of stock market cash on balance sheet + 20% cheapest on valuation',
+            'private_equity_model': 'A potential Private Equity watchlist targeting stocks quality & cheap & clean balance sheet',
+            'bullet_proof': 'Strong balance sheets + bottom 30% cash flow multiples',
+            'hidden_innovators': 'Companies making bold transformational or overinvestment bets + w/ + cash flow',
+            'long_option_ideas': 'Top 30% beta w bottom 30% cash flow multiples',
+            'share_repurchases': 'Sort High/Low drop-down menu',
+            'greater_90': 'Stocks that Wall Street Analysts have at 10% or less upside to target from current price',
+            'short_interest': 'Sort High/Low drop-down menu',
+            'liquid_loved_late': 'Lowest 5% Oddsmaker Scores',
+            'LandSlide_Risk': 'Unusual trading with downside potential',
+            'junk_yard': 'Top 20% price/sales + bottom 20% ROE',
+            'accounting_trouble': 'High Short Interest + large cash flow differentials',
+            'most_expensive': 'Top 20% forward multiples and lower profitability'
+        };
+
+        // Elements for the search button and the note display
+        const note = document.getElementById('note');
+
+        // Function to update the note based on selected checkboxes
+        function updateNote() {
+            // Get all checked checkboxes and map to display text
+            const checkedFields = Object.keys(fieldTextMap).filter(fieldId => 
+                document.querySelector(`input[name="${fieldId}"]`)?.checked
+            );
+
+            // Update the note's content based on the first checked checkbox, or a default message
+            note.textContent = checkedFields.length > 0 ? fieldTextMap[checkedFields[0]] : 'No relevant fields selected';
+            note.style.display = 'block';
+        }
+
+        // Add event listeners to each checkbox to update the note in real-time
+        Object.keys(fieldTextMap).forEach(fieldId => {
+            const checkbox = document.querySelector(`input[name="${fieldId}"]`);
+            if (checkbox) {
+                checkbox.addEventListener('change', updateNote);
+            }
+        });
+
+        // Initialize note on page load
+        updateNote();
+
+        // Additional score and grade coloring logic
+        const deciles = {{ deciles|safe }};
+        const scoreColumnIndex = 3;
+
+        function getCellBackgroundColor(cellText, columnIndex) {
+            let backgroundColor = "";
+            if (columnIndex === scoreColumnIndex) {
+                const score = parseFloat(cellText);
+                if (!isNaN(score)) {
+                    if (score >= deciles[8]) backgroundColor = "#006837";
+                    else if (score >= deciles[7]) backgroundColor = "#1A9850";
+                    else if (score >= deciles[6]) backgroundColor = "#66BD63";
+                    else if (score >= deciles[5]) backgroundColor = "#B2E7A3";
+                    else if (score >= deciles[4]) backgroundColor = "#D9EF8B";
+                    else if (score >= deciles[3]) backgroundColor = "#FEE08B";
+                    else if (score >= deciles[2]) backgroundColor = "#FDAE61";
+                    else if (score >= deciles[1]) backgroundColor = "#F46D43";
+                    else backgroundColor = "#D73027";
+                }
+            } else if (columnIndex >= 8 && columnIndex <= 15) {
+                switch (cellText) {
+                    case "A+": backgroundColor = "#006837"; break;
+                    case "A": backgroundColor = "#1A9850"; break;
+                    case "A-": backgroundColor = "#3AB87B"; break;
+                    case "B+": backgroundColor = "#66BD63"; break;
+                    case "B": backgroundColor = "#7EC391"; break;
+                    case "B-": backgroundColor = "#A6D96A"; break;
+                    case "C+": backgroundColor = "#B2E7A3"; break;
+                    case "C": backgroundColor = "#D9EF8B"; break;
+                    case "C-": backgroundColor = "#E6FBC2"; break;
+                    case "D+": backgroundColor = "#FEE08B"; break;
+                    case "D": backgroundColor = "#FCF0C3"; break;
+                    case "D-": backgroundColor = "#FDAE61"; break;
+                    case "F+": backgroundColor = "#F46D43"; break;
+                    case "F": backgroundColor = "#D73027"; break;
+                    case "F-": backgroundColor = "#A50026"; break;
+                    default: backgroundColor = "";
+                }
+            }
+            return backgroundColor;
+        }
+
+        // Apply background colors to table cells based on their content
+        document.querySelectorAll("tbody tr").forEach(row => {
+            row.querySelectorAll("td").forEach((cell, index) => {
+                const backgroundColor = getCellBackgroundColor(cell.textContent.trim(), index);
+                if (backgroundColor) cell.style.backgroundColor = backgroundColor;
+            });
+        });
+    });
+</script>

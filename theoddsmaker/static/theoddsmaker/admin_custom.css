@@ -1,0 +1,21 @@
+.object-tools {
+    display: flex; /* Use flexbox for horizontal layout */
+    gap: 10px; /* Space between buttons */
+}
+
+.object-tools li {
+    list-style-type: none; /* Remove bullet points */
+}
+
+.object-tools a.button {
+    padding: 8px 12px; /* Add some padding for buttons */
+    text-decoration: none; /* Remove underline from links */
+    background-color: #007bff; /* Bootstrap primary color */
+    color: white; /* Text color */
+    border-radius: 4px; /* Rounded corners */
+    transition: background-color 0.3s; /* Smooth background color transition */
+}
+
+.object-tools a.button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}

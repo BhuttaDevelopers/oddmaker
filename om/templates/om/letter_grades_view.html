@@ -1,0 +1,138 @@
+{% load custom_filters %}
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data List</title>
+    <style>
+        .download-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            cursor: pointer; /* Change cursor to pointer on hover */
+        }
+        body {
+            background-color: black;
+            color: #C7BA00;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        header img {
+            max-width: 150px;
+            height: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #C7BA00;
+            padding: 8px;
+            text-align: left;
+            height: 40px;
+            color: #C7BA00;
+        }
+        th {
+            background-color: #333;
+            font-weight: bold;
+        }
+        tr {
+            background-color: black;
+        }
+        img {
+            display: block;
+            margin: 0 auto; /* Center the image */
+            width: 267px; /* Set to desired width */
+            height: auto; /* Maintain aspect ratio */
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <header>
+        <div style="float:left;">
+            <button id="download-pdf" class="download-button">Download as PDF</button>
+        </div>
+        <img src="https://theoddsmaker.com/wp-content/uploads/2024/01/adam.png" alt="Logo">
+    </header>
+
+    <table id="contentToCapture">
+        <thead>
+            <tr>
+                {% for field_name in field_names %}
+                    <th>{{ field_labels|get_item:field_name|safe|linebreaksbr }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in page_obj %}
+                <tr>
+                    {% for field_name in field_names %}
+                        <td>
+                            {% if field_name == 'Score' %}
+                                {{ item|get_attr:field_name|to_float|floatformat:0 }}
+                            {% elif field_name == 'One_Year_Growth' or field_name == 'Short_Interest' %}
+                                {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                            {% elif field_name == 'Price' %}
+                                {{ item|get_attr:field_name|to_decimal|format_currency }}
+                            {% elif field_name == 'Price_OM_Target1' %}
+                                {{ item|get_attr:field_name|to_decimal|format_currency }}
+                            {% elif field_name == 'Price_SS_Target1' %}
+                                {{ item|get_attr:field_name|to_decimal|format_currency }}
+                            {% else %}
+                                {{ item|get_attr:field_name }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        document.getElementById('download-pdf').addEventListener('click', () => {
+            html2canvas(document.getElementById('contentToCapture'), {
+                scale: 2, // Optional: Improve resolution of the canvas
+                useCORS: true // Enable CORS for images
+            }).then((canvas) => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('l', 'mm', 'a4'); // 'l' for landscape orientation, 'mm' for millimeters
+
+                const imgData = canvas.toDataURL("image/png");
+                const imgWidth = 297; // A4 width in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width; // Maintain aspect ratio
+
+                let heightLeft = imgHeight;
+                let position = 0;
+
+                // Add the image to the PDF
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pdf.internal.pageSize.height;
+
+                // Loop to add new pages for additional content
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pdf.internal.pageSize.height;
+                }
+
+                pdf.save('Letter_Grades.pdf');
+            });
+        });
+    </script>
+</body>
+</html>
