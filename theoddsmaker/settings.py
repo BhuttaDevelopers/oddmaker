@@ -21,9 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-_u1n$z9wr7t9x=@7rqt%d7@n(071h&@83b1aylzte(#drzpu2-'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['194.163.44.5' , 'http://app.theoddsmaker.com']
 
 # Application definition
 INSTALLED_APPS = [
