@@ -230,7 +230,7 @@ def om_data_list(request):
         display_fields = ['Symbol', 'Company', 'Industry_Sector', 'Score', 'Price', 'OM_Target', 'Short_Interest', 'Multiple_Predictor']
 
     # Pagination
-    paginator = Paginator(om_data, 100)
+    paginator = Paginator(om_data, 3000)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
