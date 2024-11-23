@@ -7,6 +7,7 @@ from django.urls import path
 from .views import om_data_letter_grades_view, download_pdf
 from django.conf.urls.static import static
 from django.conf import settings
+from .views import deep_dive_view  
 
 urlpatterns = [
     path('data/', views.om_data_list, name='data_list'),
@@ -16,6 +17,7 @@ urlpatterns = [
     path('letter-grades/', views.om_data_letter_grades_view, name='letter_grades'),  # Letter grades view
     path('TheOddsMaker/', views.om_data_TheOddsMaker_view, name='TheOddsMaker'),  # Letter grades view
     path('download_pdf/', download_pdf, name='download_pdf'),  # Add this line TheOddsmaker_view
+    path('deep-dive/', deep_dive_view, name='deep_dive'),  # Add this line
 ]
 
 if settings.DEBUG:  # Only serve files this way in development

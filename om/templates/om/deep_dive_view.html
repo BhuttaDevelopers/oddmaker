@@ -1,0 +1,259 @@
+{% load custom_filters %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Dive View</title>
+    <style>
+        body {
+            background-color: black;
+            color: #C7BA00;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+        }
+
+        .search-fields {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .search-column {
+            flex: 0 1 calc(25% - 10px);
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .search-column:last-child {
+            margin-right: 0;
+        }
+
+        .search-column input {
+            width: 100%;
+            padding: 5px;
+            border-radius: 5px;
+            border: 1px solid #C7BA00;
+            background-color: #222;
+            color: #C7BA00;
+            height: 30px;
+        }
+
+        .search-button-container {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .search-button {
+            padding: 8px 16px;
+            background-color: #25AAE1;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #C7BA00;
+            padding: 8px;
+            text-align: left;
+            height: 40px;
+            overflow: hidden;
+            white-space: normal;
+        }
+
+        th {
+            cursor: pointer;
+            background-color: #333;
+            word-wrap: break-word;
+            font-weight: bold;
+        }
+
+        tr {
+            background-color: black;
+        }
+
+        td {
+            color: #C7BA00;
+        }
+
+        .download-button {
+            display: inline-block;
+            margin-bottom: 20px;
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Deep Dive View</h1>
+
+    <form method="GET" action="{% url 'deep_dive' %}">
+        <div class="search-fields">
+            {% for i in search_field_range %}
+                <div class="search-column">
+                    <input
+                        type="text"
+                        name="symbol_{{ i }}"
+                        placeholder="Search Symbol {{ i }}"
+                        value="{% if search_values|get_item:'symbol_'|add:i %}{{ search_values|get_item:'symbol_'|add:i }}{% else %}{% if forloop.counter == 1 %}AAPL{% elif forloop.counter == 2 %}GOOGL{% elif forloop.counter == 3 %}MSFT{% elif forloop.counter == 4 %}AMZN{% elif forloop.counter == 5 %}TSLA{% elif forloop.counter == 6 %}FB{% elif forloop.counter == 7 %}NFLX{% elif forloop.counter == 8 %}NVDA{% endif %}{% endif %}">
+                    </div>
+            {% endfor %}
+        </div>
+
+        <div class="search-button-container">
+            <button class="search-button" type="submit">Search</button>
+        </div>
+        <br><br>
+    </form>
+
+    <table id="data-table">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                {% for item in page_obj %}
+                    <th>{{ item|get_attr:field_names.0 }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for field_name in field_names %}
+                <tr>
+                    <td>{{ field_labels|get_item:field_name }}</td>
+                    {% for item in page_obj %}
+                        <td>
+                            {% if field_name in percentage_fields %}
+                                {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                            {% elif field_name in float_fields %}
+                                {{ item|get_attr:field_name|to_float|floatformat:2 }}
+                            {% elif field_name in currency_fields %}
+                                {{ item|get_attr:field_name|to_decimal|format_currency }}
+                            {% else %}
+                                {{ item|get_attr:field_name }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+        <div>
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% for key, value in search_values.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+            {% endif %}
+            
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% for key, value in search_values.items %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const deciles = {{ deciles|safe }}; // Deciles array
+        const gradingRowStart = 12; // Start of grading rows
+        const gradingRowEnd = 16; // End of grading rows
+
+        // Function to determine background color for cells
+        function getCellBackgroundColor(cellText, rowIndex) {
+            let backgroundColor = "";
+
+            // Apply decile colors for row 4
+            if (rowIndex === 4) {
+                const score = parseFloat(cellText);
+                if (!isNaN(score)) {
+                    if (score >= deciles[8]) backgroundColor = "#006837";
+                    else if (score >= deciles[7]) backgroundColor = "#1A9850";
+                    else if (score >= deciles[6]) backgroundColor = "#66BD63";
+                    else if (score >= deciles[5]) backgroundColor = "#B2E7A3";
+                    else if (score >= deciles[4]) backgroundColor = "#D9EF8B";
+                    else if (score >= deciles[3]) backgroundColor = "#FEE08B";
+                    else if (score >= deciles[2]) backgroundColor = "#FDAE61";
+                    else if (score >= deciles[1]) backgroundColor = "#F46D43";
+                    else backgroundColor = "#D73027";
+                }
+            }
+
+            // Apply grading colors for rows 12–16
+            if (rowIndex >= gradingRowStart && rowIndex <= gradingRowEnd) {
+                switch (cellText) {
+                    case "A+": backgroundColor = "#006837"; break;
+                    case "A": backgroundColor = "#1A9850"; break;
+                    case "A-": backgroundColor = "#3AB87B"; break;
+                    case "B+": backgroundColor = "#66BD63"; break;
+                    case "B": backgroundColor = "#7EC391"; break;
+                    case "B-": backgroundColor = "#A6D96A"; break;
+                    case "C+": backgroundColor = "#B2E7A3"; break;
+                    case "C": backgroundColor = "#D9EF8B"; break;
+                    case "C-": backgroundColor = "#E6FBC2"; break;
+                    case "D+": backgroundColor = "#FEE08B"; break;
+                    case "D": backgroundColor = "#FCF0C3"; break;
+                    case "D-": backgroundColor = "#FDAE61"; break;
+                    case "F+": backgroundColor = "#F46D43"; break;
+                    case "F": backgroundColor = "#D73027"; break;
+                    case "F-": backgroundColor = "#A50026"; break;
+                    default: backgroundColor = "";
+                }
+            }
+
+            return backgroundColor;
+        }
+
+        // Apply background colors to table cells
+        document.querySelectorAll("#data-table tbody tr").forEach((row, rowIndex) => {
+            row.querySelectorAll("td").forEach((cell) => {
+                const backgroundColor = getCellBackgroundColor(cell.textContent.trim(), rowIndex + 1); // Adjust rowIndex by +1 for 1-based indexing
+                if (backgroundColor) {
+                    cell.style.backgroundColor = backgroundColor;
+                }
+            });
+        });
+
+        // Add average column dynamically
+        document.addEventListener("DOMContentLoaded", () => {
+            const table = document.getElementById("data-table");
+            const rows = table.querySelectorAll("tbody tr");
+
+            rows.forEach((row) => {
+                const cells = row.querySelectorAll("td");
+                let total = 0;
+                let count = 0;
+
+                cells.forEach((cell) => {
+                    const value = parseFloat(cell.textContent.trim().replace(/[%,$]/g, ""));
+                    if (!isNaN(value)) {
+                        total += value;
+                        count++;
+                    }
+                });
+
+                const avgCell = document.createElement("td");
+                avgCell.textContent = count > 0 ? (total / count).toFixed(2) : "-";
+                avgCell.style.color = "#C7BA00";
+                row.appendChild(avgCell);
+            });
+
+            const headerRow = table.querySelector("thead tr");
+            const avgHeader = document.createElement("th");
+            avgHeader.textContent = "Average";
+            avgHeader.style.backgroundColor = "#333";
+            headerRow.appendChild(avgHeader);
+        });
+    </script>
+</body>
+</html>

@@ -517,5 +517,380 @@ def om_data_TheOddsMaker_view(request):
         'max_score': None,
         'deciles': [],
     })
+from django.shortcuts import render
+from django.db.models import Q
+from django.core.paginator import Paginator
 
+def safe_float_conversion(value):
+    """Convert to float, return None if conversion fails."""
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None
 
+def safe_decimal_conversion(value):
+    """Convert to currency formatted string."""
+    try:
+        return "${:,.2f}".format(float(value)) if value is not None else None
+    except (ValueError, TypeError):
+        return None
+
+def percentage_conversion(value):
+    """Convert to percentage formatted string."""
+    try:
+        return "{:.2f}%".format(float(value)) if value is not None else None
+    except (ValueError, TypeError):
+        return None
+
+def number_with_two_decimals(value):
+    """Convert to string with two decimal points."""
+    try:
+        return "{:.2f}".format(float(value)) if value is not None else None
+    except (ValueError, TypeError):
+        return None
+
+def number_without_decimals(value):
+    """Convert to string without decimal points."""
+    try:
+        return "{:.0f}".format(float(value)) if value is not None else None
+    except (ValueError, TypeError):
+        return None
+
+from django.shortcuts import render
+from django.db.models import Q
+from django.core.paginator import Paginator
+from decimal import Decimal, InvalidOperation
+
+# Safe conversion functions
+def safe_float_conversion(value):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return None  # Return None if conversion fails
+
+def safe_decimal_conversion(value):
+    try:
+        return Decimal(value)
+    except (InvalidOperation, ValueError, TypeError):
+        return None  # Return None if conversion fails
+
+def calculate_deciles(scores):
+    """Calculate deciles based on the list of scores."""
+    if not scores:
+        return [None] * 10  # Return a list of None if no scores
+    min_score = min(scores)
+    max_score = max(scores)
+    if min_score == max_score:
+        return [min_score] * 10
+    return [min_score + (max_score - min_score) * i / 10 for i in range(1, 11)]
+
+def deep_dive_view(request):
+    # Fetch all OmData records where Score is not null
+    om_data = OmData.objects.filter(Score__isnull=False)
+
+    # Define the default symbols
+    default_symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'FB', 'NFLX', 'NVDA']
+    
+    # Get search values from request
+    search_values = {f"symbol_{i}": request.GET.get(f"symbol_{i}", "").strip() for i in range(1, 9)}
+    
+    # Create search conditions
+    search_conditions = Q()
+
+    # Populate the search conditions with user input or default symbols
+    for i in range(1, 9):
+        symbol = search_values[f'symbol_{i}']
+        if symbol:
+            search_conditions |= Q(Symbol__iexact=symbol)
+        else:
+            search_conditions |= Q(Symbol__iexact=default_symbols[i - 1])  # Use default if no input
+
+    # Filter based on search conditions
+    if search_conditions:
+        om_data = om_data.filter(search_conditions)
+
+    # Specify fields for display
+    display_fields = [
+    'Symbol', 'Company', 'Industry_Sector', 'Score', 'Price', 'OM_Target', 'Percentile', 'Price_OM_Target',
+    'SS', 'P_SS', 'Percentile28', 'Value', 'Growth', 'Quality', 'Moat', 'Super_Multiple_Predictor', 'Data31',
+    'Data11', 'Percentile20', 'Data_6', 'Percentile_6', 'Data_3', 'Percentile_3', 'Data22', 'Percentile26',
+    'Data12', 'Percentile27', 'RD_Expenses', 'Percentile14', 'Data14', 'Percentile_22', 'Data16',
+    'Percentile_23', 'Data24', 'Percentile24', 'Data23', 'Percentile23', 'Data_1', 'Percentile_1',
+    'Data_2', 'Percentile_2', 'Data25', 'Percentile_28', 'Data102', 'Percentile_18', 'Stock_Based_Comp',
+    "Percentage_of_Revenue", 'Data8', 'Percentile102', 'SPY3', 'Data9', 'Percentile11', 'SPY4',
+    'One_Year_Growth', 'Percentile5', 'Three_Year_Growth', 'Percentile6', 'Five_Year_Growth', 'Percentile7',
+    'Data26', 'Percentile18', 'Data30', 'Data_8', 'Percentile_8', 'Data28', 'FCFMarginTrailing',
+    'FCFMarginForward', 'Data29', 'Percentile22', 'Data10', 'Percentile10', 'Data_14', 'Percentile17',
+    'Data27', 'Percentile2', 'Data_7', 'Percentile_7', 'Data5', 'Percentile_9', 'Data6', 'Percentile_13',
+    'Data19', 'Percentile12', 'Data20', 'Percentile13', 'SM_Expenses', 'Data222', 'Data4',
+    'Percentile16', 'Data88', 'Percentile183'
+]
+
+    # Define labels for each field
+    field_labels = {
+        'Symbol': 'Symbol',
+        'Company': 'Company',
+        'Industry_Sector': 'Industry',
+        'Price': 'Price',  # Convert to currency
+        'Score': 'OM Score',  # Convert to number with no decimal point
+        'OM_Target': 'OM PriceTarget',  # Convert to currency
+        'Percentile': 'OM Score Ranking',  # Convert to percentage
+        'Price_OM_Target': 'Price OMTarget',
+        'SS': 'Sell-Side Target',  # Convert to currency
+        'P_SS': 'Price/SS Target%',  # Convert to number with two decimal points
+        'Percentile28': 'Price SS Target % Ranking',  # Convert to percentage
+        'Value': 'Value',
+        'Growth': 'Growth',
+        'Quality': 'Quality',
+        'Moat': 'Moat',
+        'Super_Multiple_Predictor': 'Super Multiple Predictor',
+        'Data31': 'Quality Trio',  # Convert to number with two decimal points
+        'Data11': 'Short Interest',  # Convert to number with two decimal points
+        'Percentile20': 'Short Interest Ranking%',  # Convert to percentage
+        'Data_6': 'Share Repurchases',  # Convert to number with two decimal points
+        'Percentile_6': 'Share Repurchases Ranking',  # Convert to percentage
+        'Data_3': 'EV/Sales Trailing',  # Convert to number with two decimal points
+        'Percentile_3': 'EV/Sales Trailing<br>Ranking',  # Convert to percentage
+        'Data22': 'EV/Sales Forward',  # Convert to number with two decimal points
+        'Percentile26': 'EV/Sales Forward Ranking',  # Convert to percentage
+        'Data12': 'EV/EBITDA Trailing',  # Convert to number with two decimal points
+        'Percentile27': 'EV/EBITDA Trailing Ranking',  # Convert to percentage
+        'Data26':'EBTIDA/OCF',  # Convert to number with two decimal points
+        'Percentile18':'EBITDA/OCF Ranking',  # Convert to percentage
+        'Data30': 'EV/EBITDA Forward',  # Convert to number with two decimal points
+        'Percenile_5': 'EV/EBITDA Forward Ranking',  # Convert to percentage
+        'Data_8':'EV/EBITDA Margin',  # Convert to number with two decimal points
+        'Percentile_8': 'EV/EBITDA Margin Ranking',  # Convert to percentage
+        'Data28':'Revenue Per Share',  # Convert to number with two decimal points
+        'FCFMarginTrailing':'FCF Margin Trailing',  # Convert to number with two decimal points
+        'FCFMarginForward':'FCF Margin Forward',  # Convert to number with two decimal points
+        'Data29':'EV/FCF', # Convert to number with two decimal points
+        'Percentile22': 'EV/FCF Ranking',  # Convert to percentage
+        'Data10': 'Debt to Equity',  # Convert to number with two decimal points
+        'Percentile10': 'Debt to Equity Ranking',  # Convert to percentage
+        'Data_14':'Altman Z Score',  # Convert to number with two decimal points
+        'Percentile17':'Altman Z Score Ranking',  # Convert to percentage
+        'Data27':'Interest expense /FCF',  # Convert to number with two decimal points
+        'Percentile2':'Interest expense /FCF %',  # Convert to percentage
+        'Data_7':'ROE',  # Convert to number with two decimal points
+        'Percentile_7':'ROE % Ranking',  # Convert to percentage
+        'Data5':'ROIC',  # Convert to number with two decimal points
+        'Percentile_9':'ROIC % Ranking',  # Convert to percentage
+        'Data6':'Cash Conversion Cycle',  # Convert to number with two decimal points
+        'Percentile_13':'Cash Conversion Cycle % Ranking',  # Convert to percentage
+        'Data19':'DSOs',  # Convert to number with two decimal points
+        'Percentile12':'DSOs % Ranking',  # Convert to percentage
+        'Data20':'Inventory Turnover',  # Convert to number with two decimal points
+        'Percentile13':'Inventory Turnover % Ranking',  # Convert to percentage
+        'RD_Expenses': 'Research & Development/Sales ',  # Convert to currency
+        'Percentile14': 'R&D Ranking',  # Convert to percentage
+        'SM_Expenses':'Sales & Marketting/Sales',  # Convert to currency
+        'Data222':'Sales & Marketting/Sales ranking',  # Convert to number with two decimal points
+        'Data4':'Gross Margin',  # Convert to number with two decimal points
+        'Percentile16':'Gross Margin Ranking',  # Convert to percentage
+        'Data88':'Price/Tangible Book',  # Convert to number with two decimal points
+        'Percentile183':'Price/Tangible Book Ranking',  # Convert to percentage
+        'Data14': '1 month Change EBITDA',  # Convert to number with two decimal points
+        'Percentile_22': '1 month Change EBITDA Ranking',  # Convert to percentage
+        'Data16': '3 month Change in Revenue',  # Convert to number with two decimal points
+        'Percentile_23': '1 month Change in Revenue Ranking',  # Convert to percentage
+        'Data24': '5 year Trailing',  # Convert to number with two decimal points
+        'Percentile24': '5 year Trailing Ranking',  # Convert to percentage
+        'Data23': '3 year Forward',  # Convert to number with two decimal points
+        'Percentile23': '3 year Forward Ranking',  # Convert to percentage
+        'Data_1': '1 year Trailing',  # Convert to number with two decimal points
+        'Percentile_1': '1 year Trailing Ranking',  # Convert to percentage
+        'Data_2': '2 year Trailing',  # Convert to number with two decimal points
+        'Percentile_2': '2 year Trailing Ranking',  # Convert to percentage
+        'Data25': '2 year Forward',  # Convert to number with two decimal points
+        'Percentile_28': '2 year Forward Ranking',  # Convert to percentage
+        'Data102': 'Beta',  # Convert to number with two decimal points
+        'Percentile_18': 'Beta Ranking',  # Convert to percentage
+        'Stock_Based_Comp': 'Stock Based Comp',  # Convert to currency
+        'Percentage_of_Revenue': 'Stock Based Comp Revenue Ranking',  # Convert to percentage
+        'Data8': '3 month',  # Convert to number with two decimal points
+        'Percentile102': '3 month ranking',  # Convert to percentage
+        'SPY3': '3 month SPY',  # Convert to percentage
+        'Data9': '6 month',  # Convert to number with two decimal points
+        'Percentile11': '6 month ranking',  # Convert to percentage
+        'SPY4': '6 month SPY',  # Convert to percentage
+        'One_Year_Growth': '1 Year',  # Convert to percentage
+        'Percentile5': '1 Year Ranking',  # Convert to percentage
+        'Three_Year_Growth': '3 Year',  # Convert to percentage
+        'Percentile6': '3 Year Ranking',  # Convert to percentage
+        'Five_Year_Growth': '5 Year',  # Convert to percentage
+        'Percentile7': '5 Year Ranking',  # Convert to percentage
+    }
+ # Define groups for field formatting
+    percentage_fields = [
+        'Price_OM_Target', 'One_Year_Growth', 'Three_Year_Growth', 'Five_Year_Growth', 'SPY3', 'SPY4',
+    'Percentile', 'Percentile28', 'Percentile20', 'Percentile_6', 'Percentile_3', 'Percentile26',
+    'Percentile27', 'Percentile18', 'Percentile_5', 'Percentile_8', 'Percentile22', 'Percentile10',
+    'Percentile17', 'Percentile2', 'Percentile_7', 'Percentile_9', 'Percentile_13', 'Percentile12',
+    'Percentile13', 'Percentile14', 'Percentile_22', 'Percentile_23', 'Percentile16', 'Percentile183',
+    'Percentile24', 'Percentile23', 'Percentile_1', 'Percentile_2', 'Percentile_28', 'Percentile_18',
+    'Percentile102', 'Percentile11', 'Percentile5', 'Percentile6', 'Percentile7', 'Percentage_of_Revenue'
+    ]
+
+    float_fields = [
+    'Score', 'P_SS', 'Beta', 'Data31', 'Data11', 'Data_6', 'Data_3', 'Data22', 'Data12', 'Data14',
+    'Data26', 'Data30', 'Data_8', 'Data28', 'Data29', 'Data10', 'Data_14', 'Data27', 'Data_7',
+    'Data5', 'Data6', 'Data19', 'Data20', 'Data222', 'Data4', 'Data88', 'Data16', 'Data24',
+    'Data23', 'Data_1', 'Data_2', 'Data25', 'Data8', 'Data9'
+    ]
+
+    currency_fields = [
+        'Price', 'OM_Target', 'SS', 'RD_Expenses', 'Stock_Based_Comp', 'SM_Expenses'
+    ]
+    # Convert specific fields to their respective formats
+    for item in om_data:
+        item.Score = safe_float_conversion(item.Score)
+    item.Price = safe_decimal_conversion(item.Price)
+    item.OM_Target = safe_decimal_conversion(item.OM_Target)
+
+    Percentile = safe_float_conversion(item.Percentile)
+    item.Percentile = (Percentile * 100) if Percentile is not None else None
+
+    item.SS = safe_decimal_conversion(item.SS)
+    item.P_SS = safe_float_conversion(item.P_SS)
+
+    Percentile28 = safe_float_conversion(item.Percentile28)
+    item.Percentile28 = (Percentile28 * 100) if Percentile28 is not None else None
+
+    item.Data31 = safe_float_conversion(item.Data31)
+    item.Data11 = safe_float_conversion(item.Data11)
+
+    Percentile20 = safe_float_conversion(item.Percentile20)
+    item.Percentile20 = (Percentile20 * 100) if Percentile20 is not None else None
+
+    item.Data_6 = safe_float_conversion(item.Data_6)
+
+    Percentile_6 = safe_float_conversion(item.Percentile_6)
+    item.Percentile_6 = (Percentile_6 * 100) if Percentile_6 is not None else None
+
+    item.Data_3 = safe_float_conversion(item.Data_3)
+
+    Percentile_3 = safe_float_conversion(item.Percentile_3)
+    item.Percentile_3 = (Percentile_3 * 100) if Percentile_3 is not None else None
+
+    item.Data22 = safe_float_conversion(item.Data22)
+
+    Percentile26 = safe_float_conversion(item.Percentile26)
+    item.Percentile26 = (Percentile26 * 100) if Percentile26 is not None else None
+
+    item.Data12 = safe_float_conversion(item.Data12)
+
+    Percentile27 = safe_float_conversion(item.Percentile27)
+    item.Percentile27 = (Percentile27 * 100) if Percentile27 is not None else None
+
+    item.RD_Expenses = safe_decimal_conversion(item.RD_Expenses)
+
+    Percentile14 = safe_float_conversion(item.Percentile14)
+    item.Percentile14 = (Percentile14 * 100) if Percentile14 is not None else None
+
+    item.Data14 = safe_float_conversion(item.Data14)
+
+    Percentile_22 = safe_float_conversion(item.Percentile_22)
+    item.Percentile_22 = (Percentile_22 * 100) if Percentile_22 is not None else None
+
+    item.Data16 = safe_float_conversion(item.Data16)
+
+    Percentile_23 = safe_float_conversion(item.Percentile_23)
+    item.Percentile_23 = (Percentile_23 * 100) if Percentile_23 is not None else None
+
+    item.Data24 = safe_float_conversion(item.Data24)
+
+    Percentile24 = safe_float_conversion(item.Percentile24)
+    item.Percentile24 = (Percentile24 * 100) if Percentile24 is not None else None
+
+    item.Data23 = safe_float_conversion(item.Data23)
+
+    Percentile23 = safe_float_conversion(item.Percentile23)
+    item.Percentile23 = (Percentile23 * 100) if Percentile23 is not None else None
+
+    item.Data_1 = safe_float_conversion(item.Data_1)
+
+    Percentile_1 = safe_float_conversion(item.Percentile_1)
+    item.Percentile_1 = (Percentile_1 * 100) if Percentile_1 is not None else None
+
+    item.Data_2 = safe_float_conversion(item.Data_2)
+
+    Percentile_2 = safe_float_conversion(item.Percentile_2)
+    item.Percentile_2 = (Percentile_2 * 100) if Percentile_2 is not None else None
+
+    item.Data25 = safe_float_conversion(item.Data25)
+
+    Percentile_28 = safe_float_conversion(item.Percentile_28)
+    item.Percentile_28 = (Percentile_28 * 100) if Percentile_28 is not None else None
+
+    item.Data102 = safe_float_conversion(item.Data102)
+
+    Percentile_18 = safe_float_conversion(item.Percentile_18)
+    item.Percentile_18 = (Percentile_18 * 100) if Percentile_18 is not None else None
+
+    item.Stock_Based_Comp = safe_decimal_conversion(item.Stock_Based_Comp)
+
+    Percentage_of_Revenue = safe_float_conversion(item.Percentage_of_Revenue)
+    item.Percentage_of_Revenue = (Percentage_of_Revenue * 100) if Percentage_of_Revenue is not None else None
+
+    item.Data8 = safe_float_conversion(item.Data8)
+
+    Percentile102 = safe_float_conversion(item.Percentile102)
+    item.Percentile102 = (Percentile102 * 100) if Percentile102 is not None else None
+
+    SPY3 = safe_float_conversion(item.SPY3)
+    item.SPY3 = (SPY3 * 100) if SPY3 is not None else None
+
+    item.Data9 = safe_float_conversion(item.Data9)
+
+    Percentile11 = safe_float_conversion(item.Percentile11)
+    item.Percentile11 = (Percentile11 * 100) if Percentile11 is not None else None
+
+    SPY4 = safe_float_conversion(item.SPY4)
+    item.SPY4 = (SPY4 * 100) if SPY4 is not None else None
+
+    One_Year_Growth = safe_float_conversion(item.One_Year_Growth)
+    item.One_Year_Growth = (One_Year_Growth * 100) if One_Year_Growth is not None else None
+
+    Percentile5 = safe_float_conversion(item.Percentile5)
+    item.Percentile5 = (Percentile5 * 100) if Percentile5 is not None else None
+
+    Three_Year_Growth = safe_float_conversion(item.Three_Year_Growth)
+    item.Three_Year_Growth = (Three_Year_Growth * 100) if Three_Year_Growth is not None else None
+
+    Percentile6 = safe_float_conversion(item.Percentile6)
+    item.Percentile6 = (Percentile6 * 100) if Percentile6 is not None else None
+
+    Five_Year_Growth = safe_float_conversion(item.Five_Year_Growth)
+    item.Five_Year_Growth = (Five_Year_Growth * 100) if Five_Year_Growth is not None else None
+
+    Percentile7 = safe_float_conversion(item.Percentile7)
+    item.Percentile7 = (Percentile7 * 100) if Percentile7 is not None else None
+
+    # Calculate scores for deciles
+    scores = [item.Score for item in om_data if item.Score is not None]
+    deciles = calculate_deciles(scores)
+
+    # Sort data by Score
+    om_data = sorted(om_data, key=lambda x: (x.Score if isinstance(x.Score, (int, float)) else float('-inf')), reverse=True)
+
+    # Pagination
+    paginator = Paginator(om_data, 2400)  # Adjust per your needs
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Precompute field values for search inputs
+    search_field_values = [search_values.get(f"symbol_{i}", "") for i in range(1, 9)]
+
+    return render(request, 'om/deep_dive_view.html', {
+        'page_obj': page_obj,
+        'field_names': display_fields,
+        'field_labels': field_labels,
+        'search_values': search_values,
+        'search_field_values': search_field_values,
+        'search_field_range': list(range(1, 9)),
+        'deciles': deciles,
+        'percentage_fields': percentage_fields,
+        'float_fields': float_fields,
+        'currency_fields': currency_fields,
+    })

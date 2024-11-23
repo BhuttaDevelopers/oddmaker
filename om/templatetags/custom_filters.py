@@ -5,7 +5,7 @@ register = template.Library()
 
 @register.filter
 def get_attr(obj, attr_name):
-    """Get attribute from an object by name."""
+    """Get an attribute from an object by name."""
     return getattr(obj, attr_name, None)
 
 @register.filter
@@ -37,7 +37,7 @@ def format_currency(value, symbol="$"):
     """Format a value as currency, using a specified currency symbol."""
     try:
         # Convert to Decimal for accuracy
-        value = to_decimal(value)
+        value = Decimal(value)
         return f"{symbol}{value:,.2f}"  # Example format: $1,234.56
     except (InvalidOperation, ValueError, TypeError):
         return value  # Return as-is if conversion fails
@@ -50,5 +50,8 @@ def get_item(dictionary, key):
     return None
 
 @register.filter
-def get_attr(obj, attr):
-    return getattr(obj, attr, None)
+def get_item(dictionary, key):
+    """Retrieve a value from a dictionary by key."""
+    if isinstance(dictionary, dict):
+        return dictionary.get(key, None)
+    return None

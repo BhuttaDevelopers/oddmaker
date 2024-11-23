@@ -12,15 +12,15 @@
             display: inline-block;
             margin-bottom: 20px;
             padding: 8px 16px;
-            background-color: #4CAF50;
-            color: white;
+            background-color: white;
+            color: black;
             text-decoration: none;
             border-radius: 4px;
             cursor: pointer; /* Change cursor to pointer on hover */
         }
         body {
-            background-color: black;
-            color: #C7BA00;
+            background-color: white;
+            color: black;
             font-family: Arial, Helvetica, sans-serif;
             font-size: 14px;
         }
@@ -38,18 +38,18 @@
             margin-bottom: 20px;
         }
         th, td {
-            border: 1px solid #C7BA00;
+            border: 1px solid black;
             padding: 8px;
             text-align: left;
             height: 40px;
-            color: #C7BA00;
+            color: black;
         }
         th {
-            background-color: #333;
+            background-color: white;
             font-weight: bold;
         }
         tr {
-            background-color: black;
+            background-color: white;
         }
         img {
             display: block;
@@ -70,8 +70,8 @@
     </header>
 
     <table id="contentToCapture">
-        <caption style="caption-side: top; text-align: center; padding: 10px;background: black;">
-            <img src="{% static 'om/images/logo.webp' %}" alt="Logo" style="height: 50px;">
+        <caption style="caption-side: top; text-align: center; padding: 10px;background: white;">
+            <img src="{% static 'om/images/logo.webp' %}" alt="Logo" style="height: 50px;background:black">
         </caption>
         <thead>
             <tr>
@@ -159,7 +159,7 @@
                     heightLeft -= pdf.internal.pageSize.height;
                 }
 
-                pdf.save('Letter_Grades.pdf');
+                pdf.save('OddsMaker_Score.pdf');
             });
         });
     </script>
