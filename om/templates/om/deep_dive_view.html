@@ -123,14 +123,14 @@
     <table id="data-table">
         <thead>
             <tr>
-                <th>Symbol</th>
+                <th>SYMBOL</th>
                 {% for item in page_obj %}
-                    <th>{{ item|get_attr:field_names.0 }}</th>
+                    <th>{{ item|get_attr:'Symbol' }}</th>
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
-            {% for field_name in field_names %}
+            {% for field_name in field_labels.keys %}
                 <tr>
                     <td>{{ field_labels|get_item:field_name }}</td>
                     {% for item in page_obj %}
@@ -228,12 +228,12 @@
         document.addEventListener("DOMContentLoaded", () => {
             const table = document.getElementById("data-table");
             const rows = table.querySelectorAll("tbody tr");
-
+        
             rows.forEach((row) => {
                 const cells = row.querySelectorAll("td");
                 let total = 0;
                 let count = 0;
-
+        
                 cells.forEach((cell) => {
                     const value = parseFloat(cell.textContent.trim().replace(/[%,$]/g, ""));
                     if (!isNaN(value)) {
@@ -241,18 +241,23 @@
                         count++;
                     }
                 });
-
+        
+                // Create the average cell and insert it after the symbol cell (first cell)
                 const avgCell = document.createElement("td");
                 avgCell.textContent = count > 0 ? (total / count).toFixed(2) : "-";
                 avgCell.style.color = "#C7BA00";
-                row.appendChild(avgCell);
+                
+                // Insert it after the first cell
+                row.insertBefore(avgCell, row.cells[1]); // Insert average cell after the first cell
             });
-
+        
             const headerRow = table.querySelector("thead tr");
             const avgHeader = document.createElement("th");
             avgHeader.textContent = "Average";
             avgHeader.style.backgroundColor = "#333";
-            headerRow.appendChild(avgHeader);
+            
+            // Insert average header after the first header cell (Field header)
+            headerRow.insertBefore(avgHeader, headerRow.cells[1]); // Insert average header after the field header
         });
     </script>
 </body>

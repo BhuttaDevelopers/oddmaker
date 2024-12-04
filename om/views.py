@@ -584,6 +584,7 @@ def calculate_deciles(scores):
         return [min_score] * 10
     return [min_score + (max_score - min_score) * i / 10 for i in range(1, 11)]
 
+from collections import OrderedDict
 def deep_dive_view(request):
     # Fetch all OmData records where Score is not null
     om_data = OmData.objects.filter(Score__isnull=False)
@@ -627,100 +628,102 @@ def deep_dive_view(request):
 ]
 
     # Define labels for each field
-    field_labels = {
-        'Symbol': 'Symbol',
-        'Company': 'Company',
-        'Industry_Sector': 'Industry',
-        'Price': 'Price',  # Convert to currency
-        'Score': 'OM Score',  # Convert to number with no decimal point
-        'OM_Target': 'OM PriceTarget',  # Convert to currency
-        'Percentile': 'OM Score Ranking',  # Convert to percentage
-        'Price_OM_Target': 'Price OMTarget',
-        'SS': 'Sell-Side Target',  # Convert to currency
-        'P_SS': 'Price/SS Target%',  # Convert to number with two decimal points
-        'Percentile28': 'Price SS Target % Ranking',  # Convert to percentage
-        'Value': 'Value',
-        'Growth': 'Growth',
-        'Quality': 'Quality',
-        'Moat': 'Moat',
-        'Super_Multiple_Predictor': 'Super Multiple Predictor',
-        'Data31': 'Quality Trio',  # Convert to number with two decimal points
-        'Data11': 'Short Interest',  # Convert to number with two decimal points
-        'Percentile20': 'Short Interest Ranking%',  # Convert to percentage
-        'Data_6': 'Share Repurchases',  # Convert to number with two decimal points
-        'Percentile_6': 'Share Repurchases Ranking',  # Convert to percentage
-        'Data_3': 'EV/Sales Trailing',  # Convert to number with two decimal points
-        'Percentile_3': 'EV/Sales Trailing<br>Ranking',  # Convert to percentage
-        'Data22': 'EV/Sales Forward',  # Convert to number with two decimal points
-        'Percentile26': 'EV/Sales Forward Ranking',  # Convert to percentage
-        'Data12': 'EV/EBITDA Trailing',  # Convert to number with two decimal points
-        'Percentile27': 'EV/EBITDA Trailing Ranking',  # Convert to percentage
-        'Data26':'EBTIDA/OCF',  # Convert to number with two decimal points
-        'Percentile18':'EBITDA/OCF Ranking',  # Convert to percentage
-        'Data30': 'EV/EBITDA Forward',  # Convert to number with two decimal points
-        'Percenile_5': 'EV/EBITDA Forward Ranking',  # Convert to percentage
-        'Data_8':'EV/EBITDA Margin',  # Convert to number with two decimal points
-        'Percentile_8': 'EV/EBITDA Margin Ranking',  # Convert to percentage
-        'Data28':'Revenue Per Share',  # Convert to number with two decimal points
-        'FCFMarginTrailing':'FCF Margin Trailing',  # Convert to number with two decimal points
-        'FCFMarginForward':'FCF Margin Forward',  # Convert to number with two decimal points
-        'Data29':'EV/FCF', # Convert to number with two decimal points
-        'Percentile22': 'EV/FCF Ranking',  # Convert to percentage
-        'Data10': 'Debt to Equity',  # Convert to number with two decimal points
-        'Percentile10': 'Debt to Equity Ranking',  # Convert to percentage
-        'Data_14':'Altman Z Score',  # Convert to number with two decimal points
-        'Percentile17':'Altman Z Score Ranking',  # Convert to percentage
-        'Data27':'Interest expense /FCF',  # Convert to number with two decimal points
-        'Percentile2':'Interest expense /FCF %',  # Convert to percentage
-        'Data_7':'ROE',  # Convert to number with two decimal points
-        'Percentile_7':'ROE % Ranking',  # Convert to percentage
-        'Data5':'ROIC',  # Convert to number with two decimal points
-        'Percentile_9':'ROIC % Ranking',  # Convert to percentage
-        'Data6':'Cash Conversion Cycle',  # Convert to number with two decimal points
-        'Percentile_13':'Cash Conversion Cycle % Ranking',  # Convert to percentage
-        'Data19':'DSOs',  # Convert to number with two decimal points
-        'Percentile12':'DSOs % Ranking',  # Convert to percentage
-        'Data20':'Inventory Turnover',  # Convert to number with two decimal points
-        'Percentile13':'Inventory Turnover % Ranking',  # Convert to percentage
-        'RD_Expenses': 'Research & Development/Sales ',  # Convert to currency
-        'Percentile14': 'R&D Ranking',  # Convert to percentage
-        'SM_Expenses':'Sales & Marketting/Sales',  # Convert to currency
-        'Data222':'Sales & Marketting/Sales ranking',  # Convert to number with two decimal points
-        'Data4':'Gross Margin',  # Convert to number with two decimal points
-        'Percentile16':'Gross Margin Ranking',  # Convert to percentage
-        'Data88':'Price/Tangible Book',  # Convert to number with two decimal points
-        'Percentile183':'Price/Tangible Book Ranking',  # Convert to percentage
-        'Data14': '1 month Change EBITDA',  # Convert to number with two decimal points
-        'Percentile_22': '1 month Change EBITDA Ranking',  # Convert to percentage
-        'Data16': '3 month Change in Revenue',  # Convert to number with two decimal points
-        'Percentile_23': '1 month Change in Revenue Ranking',  # Convert to percentage
-        'Data24': '5 year Trailing',  # Convert to number with two decimal points
-        'Percentile24': '5 year Trailing Ranking',  # Convert to percentage
-        'Data23': '3 year Forward',  # Convert to number with two decimal points
-        'Percentile23': '3 year Forward Ranking',  # Convert to percentage
-        'Data_1': '1 year Trailing',  # Convert to number with two decimal points
-        'Percentile_1': '1 year Trailing Ranking',  # Convert to percentage
-        'Data_2': '2 year Trailing',  # Convert to number with two decimal points
-        'Percentile_2': '2 year Trailing Ranking',  # Convert to percentage
-        'Data25': '2 year Forward',  # Convert to number with two decimal points
-        'Percentile_28': '2 year Forward Ranking',  # Convert to percentage
-        'Data102': 'Beta',  # Convert to number with two decimal points
-        'Percentile_18': 'Beta Ranking',  # Convert to percentage
-        'Stock_Based_Comp': 'Stock Based Comp',  # Convert to currency
-        'Percentage_of_Revenue': 'Stock Based Comp Revenue Ranking',  # Convert to percentage
-        'Data8': '3 month',  # Convert to number with two decimal points
-        'Percentile102': '3 month ranking',  # Convert to percentage
-        'SPY3': '3 month SPY',  # Convert to percentage
-        'Data9': '6 month',  # Convert to number with two decimal points
-        'Percentile11': '6 month ranking',  # Convert to percentage
-        'SPY4': '6 month SPY',  # Convert to percentage
-        'One_Year_Growth': '1 Year',  # Convert to percentage
-        'Percentile5': '1 Year Ranking',  # Convert to percentage
-        'Three_Year_Growth': '3 Year',  # Convert to percentage
-        'Percentile6': '3 Year Ranking',  # Convert to percentage
-        'Five_Year_Growth': '5 Year',  # Convert to percentage
-        'Percentile7': '5 Year Ranking',  # Convert to percentage
-    }
+    from collections import OrderedDict
+    field_labels = OrderedDict([
+    ('Symbol', 'Symbol'),
+    ('Company', 'Company'),
+    ('Industry_Sector', 'Industry'),
+    ('Price', 'Price'),  # Convert to currency
+    ('Score', 'OM Score'),  # Convert to number with no decimal point
+    ('OM_Target', 'OM PriceTarget'),  # Convert to currency
+    ('Percentile', 'OM Score Ranking'),  # Convert to percentage
+    ('Price_OM_Target', 'Price OMTarget'),
+    ('SS', 'Sell-Side Target'),  # Convert to currency
+    ('P_SS', 'Price/SS Target%'),  # Convert to number with two decimal points
+    ('Percentile28', 'Price SS Target % Ranking'),  # Convert to percentage
+    ('Value', 'Value'),
+    ('Growth', 'Growth'),
+    ('Quality', 'Quality'),
+    ('Moat', 'Moat'),
+    ('Super_Multiple_Predictor', 'Super Multiple Predictor'),
+    ('Data31', 'Quality Trio'),  # Convert to number with two decimal points
+    ('Data11', 'Short Interest'),  # Convert to number with two decimal points
+    ('Percentile20', 'Short Interest Ranking%'),  # Convert to percentage
+    ('Data_6', 'Share Repurchases'),  # Convert to number with two decimal points
+    ('Percentile_6', 'Share Repurchases Ranking'),  # Convert to percentage
+    ('Data_3', 'EV/Sales Trailing'),  # Convert to number with two decimal points
+    ('Percentile_3', 'EV/Sales Trailing<br>Ranking'),  # Convert to percentage
+    ('Data22', 'EV/Sales Forward'),  # Convert to number with two decimal points
+    ('Percentile26', 'EV/Sales Forward Ranking'),  # Convert to percentage
+    ('Data12', 'EV/EBITDA Trailing'),  # Convert to number with two decimal points
+    ('Percentile27', 'EV/EBITDA Trailing Ranking'),  # Convert to percentage
+    ('Data26', 'EBITDA/OCF'),  # Convert to number with two decimal points
+    ('Percentile18', 'EBITDA/OCF Ranking'),  # Convert to percentage
+    ('Data30', 'EV/EBITDA Forward'),  # Convert to number with two decimal points
+    ('Percenile_5', 'EV/EBITDA Forward Ranking'),  # Convert to percentage
+    ('Data_8', 'EV/EBITDA Margin'),  # Convert to number with two decimal points
+    ('Percentile_8', 'EV/EBITDA Margin Ranking'),  # Convert to percentage
+    ('Data28', 'Revenue Per Share'),  # Convert to number with two decimal points
+    ('FCFMarginTrailing', 'FCF Margin Trailing'),  # Convert to number with two decimal points
+    ('FCFMarginForward', 'FCF Margin Forward'),  # Convert to number with two decimal points
+    ('Data29', 'EV/FCF'),  # Convert to number with two decimal points
+    ('Percentile22', 'EV/FCF Ranking'),  # Convert to percentage
+    ('Data10', 'Debt to Equity'),  # Convert to number with two decimal points
+    ('Percentile10', 'Debt to Equity Ranking'),  # Convert to percentage
+    ('Data_14', 'Altman Z Score'),  # Convert to number with two decimal points
+    ('Percentile17', 'Altman Z Score Ranking'),  # Convert to percentage
+    ('Data27', 'Interest expense /FCF'),  # Convert to number with two decimal points
+    ('Percentile2', 'Interest expense /FCF %'),  # Convert to percentage
+    ('Data_7', 'ROE'),  # Convert to number with two decimal points
+    ('Percentile_7', 'ROE % Ranking'),  # Convert to percentage
+    ('Data5', 'ROIC'),  # Convert to number with two decimal points
+    ('Percentile_9', 'ROIC % Ranking'),  # Convert to percentage
+    ('Data6', 'Cash Conversion Cycle'),  # Convert to number with two decimal points
+    ('Percentile_13', 'Cash Conversion Cycle % Ranking'),  # Convert to percentage
+    ('Data19', 'DSOs'),  # Convert to number with two decimal points
+    ('Percentile12', 'DSOs % Ranking'),  # Convert to percentage
+    ('Data20', 'Inventory Turnover'),  # Convert to number with two decimal points
+    ('Percentile13', 'Inventory Turnover % Ranking'),  # Convert to percentage
+    ('RD_Expenses', 'Research & Development/Sales'),  # Convert to currency
+    ('Percentile14', 'R&D Ranking'),  # Convert to percentage
+    ('SM_Expenses', 'Sales & Marketing/Sales'),  # Convert to currency
+    ('Data222', 'Sales & Marketing/Sales Ranking'),  # Convert to number with two decimal points
+    ('Data4', 'Gross Margin'),  # Convert to number with two decimal points
+    ('Percentile16', 'Gross Margin Ranking'),  # Convert to percentage
+    ('Data88', 'Price/Tangible Book'),  # Convert to number with two decimal points
+    ('Percentile183', 'Price/Tangible Book Ranking'),  # Convert to percentage
+    ('Data14', '1 month Change EBITDA'),  # Convert to number with two decimal points
+    ('Percentile_22', '1 month Change EBITDA Ranking'),  # Convert to percentage
+    ('Data16', '3 month Change in Revenue'),  # Convert to number with two decimal points
+    ('Percentile_23', '1 month Change in Revenue Ranking'),  # Convert to percentage
+    ('Data24', '5 year Trailing'),  # Convert to number with two decimal points
+    ('Percentile24', '5 year Trailing Ranking'),  # Convert to percentage
+    ('Data23', '3 year Forward'),  # Convert to number with two decimal points
+    ('Percentile23', '3 year Forward Ranking'),  # Convert to percentage
+    ('Data_1', '1 year Trailing'),  # Convert to number with two decimal points
+    ('Percentile_1', '1 year Trailing Ranking'),  # Convert to percentage
+    ('Data_2', '2 year Trailing'),  # Convert to number with two decimal points
+    ('Percentile_2', '2 year Trailing Ranking'),  # Convert to percentage
+    ('Data25', '2 year Forward'),  # Convert to number with two decimal points
+    ('Percentile_28', '2 year Forward Ranking'),  # Convert to percentage
+    ('Data102', 'Beta'),  # Convert to number with two decimal points
+    ('Percentile_18', 'Beta Ranking'),  # Convert to percentage
+    ('Stock_Based_Comp', 'Stock Based Comp'),  # Convert to currency
+    ('Percentage_of_Revenue', 'Stock Based Comp Revenue Ranking'),  # Convert to percentage
+    ('Data8', '3 month'),  # Convert to number with two decimal points
+    ('Percentile102', '3 month ranking'),  # Convert to percentage
+    ('SPY3', '3 month SPY'),  # Convert to percentage
+    ('Data9', '6 month'),  # Convert to number with two decimal points
+    ('Percentile11', '6 month ranking'),  # Convert to percentage
+    ('SPY4', '6 month SPY'),  # Convert to percentage
+    ('One_Year_Growth', '1 Year'),  # Convert to percentage
+    ('Percentile5', '1 Year Ranking'),  # Convert to percentage
+    ('Three_Year_Growth', '3 Year'),  # Convert to percentage
+    ('Percentile6', '3 Year Ranking'),  # Convert to percentage
+    ('Five_Year_Growth', '5 Year'),  # Convert to percentage
+    ('Percentile7', '5 Year Ranking'),  # Convert to percentage
+])
+
  # Define groups for field formatting
     percentage_fields = [
         'Price_OM_Target', 'One_Year_Growth', 'Three_Year_Growth', 'Five_Year_Growth', 'SPY3', 'SPY4',
@@ -894,3 +897,54 @@ def deep_dive_view(request):
         'float_fields': float_fields,
         'currency_fields': currency_fields,
     })
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import OmData  # Ensure this is the correct model import
+
+def manage_records(request):
+    if request.method == 'POST':
+        if 'delete_all' in request.POST:
+            OmData.objects.all().delete()  # Delete all records
+            return redirect('manage_records')  # Redirect to the same page
+
+    data = OmData.objects.all()
+
+    # Extract field names, use 'name' if 'verbose_name' is unavailable, excluding the first two fields (id and another field)
+    fields = []
+    for field in OmData._meta.fields:
+        if field.name not in ['id']:  # Exclude the 'id' field
+            field_name = field.verbose_name if field.verbose_name else field.name
+            fields.append(field_name)
+
+    return render(request, 'om/manage_records.html', {'data': data, 'fields': fields})
+
+
+
+@csrf_exempt
+def update_record(request, record_id):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)  # Parse JSON body
+            record = get_object_or_404(OmData, id=record_id)  # Get the record or return 404
+
+            # Update the record's fields
+            for field, value in data.items():
+                setattr(record, field, value)
+            record.save()
+
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+from django.shortcuts import redirect
+from .models import OmData
+
+def delete_record(request, id):
+    try:
+        record = OmData.objects.get(id=id)
+        record.delete()  # Delete the record
+    except OmData.DoesNotExist:
+        pass  # Handle the case where the record doesn't exist (optional)
+    
+    return redirect('manage_records')  # Redirect back to the manage records page

@@ -55,3 +55,10 @@ def get_item(dictionary, key):
     if isinstance(dictionary, dict):
         return dictionary.get(key, None)
     return None
+@register.filter
+def get_field_value(record, field_name):
+    """Retrieve the value of a field for a given record."""
+    try:
+        return getattr(record, field_name)
+    except AttributeError:
+        return None

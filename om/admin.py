@@ -12,7 +12,7 @@ class OmDataAdmin(admin.ModelAdmin):
 
     list_display = [field.name for field in OmData._meta.fields]
     search_fields = ['Symbol', 'Company', 'Industry_Sector']
-    list_per_page = 100
+    list_per_page = 3000
     list_max_show_all = 3000
     actions = ['delete_selected_custom']
 

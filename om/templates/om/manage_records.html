@@ -1,0 +1,172 @@
+{% load custom_filters %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Records</title>
+    <style>
+        /* General body and header styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Styling for action buttons */
+        .object-tools {
+            display: flex;
+            justify-content: center;
+            gap: 15px;  /* Space between buttons */
+            margin-bottom: 20px; /* Space between buttons and table */
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+            text-align: center;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px); /* Slight lift effect */
+        }
+
+        /* Styling for the table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px; /* Extra space between table and buttons */
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            background-color: #fff;
+        }
+
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        td {
+            font-size: 14px;
+            color: #333;
+        }
+
+        td[contenteditable="true"] {
+            background-color: #fafafa;
+        }
+
+        td button {
+            padding: 6px 12px;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        td button:hover {
+            background-color: #c82333;
+            transform: translateY(-1px); /* Hover effect for the delete button */
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Admin Pannel</h1>
+    <h2>Manage OM Data</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit" name="delete_all" class="button">Delete All Records</button>
+    </form>
+
+    <div class="object-tools">
+        <a href="{% url 'admin:download_excel' %}" class="button">Download Excel</a>
+        <a href="{% url 'admin:upload_data' %}" class="button">Upload Data</a>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Actions</th> <!-- Move actions to the start of the header row -->
+                {% for field in fields %}
+                    <th>{{ field|capfirst }}</th> <!-- Display the field names (excluding 'id') -->
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in data %}
+            <tr>
+                <!-- Action buttons at the start of the row -->
+                <td>
+                    <form method="POST" action="{% url 'delete_record' record.id %}">
+                        {% csrf_token %}
+                        <button type="submit">Delete</button>
+                    </form>
+                </td>
+        
+                <!-- Skip the ID field -->
+                {% for field in fields %}
+                    <td contenteditable="true" data-field-name="{{ field }}">
+                        {{ record|get_field_value:field }}
+                    </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        // Add event listeners to handle inline editing
+        document.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+            cell.addEventListener('blur', function() {
+                const recordId = this.closest('tr').children[1].innerText; // Get the ID of the record (now in second column)
+                const fieldName = this.getAttribute('data-field-name');
+                const newValue = this.innerText;
+
+                // Send an AJAX request to save the new value
+                fetch(`/update_record/${recordId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ [fieldName]: newValue })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Success:', data);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
