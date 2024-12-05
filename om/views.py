@@ -977,7 +977,7 @@ def upload_om_data(request):
                     print(f"Error for row: {row_data}. Exception: {e}")
 
             messages.success(request, f"Successfully saved {saved_count} records.")
-            return redirect('upload_om_data')
+            return redirect('home')
 
         except Exception as e:
             messages.error(request, f"Error uploading file: {e}")
