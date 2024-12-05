@@ -1,10 +1,31 @@
 
 {# templates/om/upload.html #}
-<h2>Upload OM Data</h2>
+<style>
+    .button {
+        border: 1px solid #FF6000;
+        padding: 12px 40px;
+        color: #FF6000;
+        font-size: 15px;
+        height: 45px;
+        width: 200px;
+        font-weight: 700;
+        background: transparent;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    .button:hover {
+        background-color: #FF6000;
+        color: #fff; /* Change font color on hover */
+        cursor: pointer;
+    }
+    
+    
+</style>
+<h2 style="color:#FF6000">Upload OM Data</h2>
 <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <label for="excel_file">Choose Excel file:</label>
-    <input type="file" name="excel_file" id="excel_file" required>
-    <button type="submit" name="append">Append Data</button>
-    <button type="submit" name="replace">Replace Data</button>
+    <label for="excel_file" >Choose Excel file:</label>
+    <input  type="file" name="excel_file" id="excel_file" required>
+    <button type="submit" name="append" class="button">Append Data</button>
+    <button type="submit" name="replace" class="button">Replace Data</button>
 </form>

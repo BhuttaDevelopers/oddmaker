@@ -898,11 +898,17 @@ def deep_dive_view(request):
         'currency_fields': currency_fields,
     })
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
 import json
+import pandas as pd
 from .models import OmData  # Ensure this is the correct model import
 
+
+# View to manage records
+@login_required
 def manage_records(request):
     if request.method == 'POST':
         if 'delete_all' in request.POST:
@@ -911,18 +917,15 @@ def manage_records(request):
 
     data = OmData.objects.all()
 
-    # Extract field names, use 'name' if 'verbose_name' is unavailable, excluding the first two fields (id and another field)
-    fields = []
-    for field in OmData._meta.fields:
-        if field.name not in ['id']:  # Exclude the 'id' field
-            field_name = field.verbose_name if field.verbose_name else field.name
-            fields.append(field_name)
+    # Extract field names, excluding the 'id' field
+    fields = [field.name for field in OmData._meta.fields if field.name != 'id']
 
     return render(request, 'om/manage_records.html', {'data': data, 'fields': fields})
 
 
-
+# View to update a record via AJAX
 @csrf_exempt
+@login_required
 def update_record(request, record_id):
     if request.method == 'POST':
         try:
@@ -937,14 +940,67 @@ def update_record(request, record_id):
             return JsonResponse({'status': 'success'})
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
-from django.shortcuts import redirect
-from .models import OmData
 
+
+# View to delete a specific record
+@login_required
 def delete_record(request, id):
     try:
         record = OmData.objects.get(id=id)
         record.delete()  # Delete the record
     except OmData.DoesNotExist:
         pass  # Handle the case where the record doesn't exist (optional)
-    
+
     return redirect('manage_records')  # Redirect back to the manage records page
+
+
+# View to upload data from an Excel file
+@login_required
+def upload_om_data(request):
+    if request.method == 'POST' and 'excel_file' in request.FILES:
+        excel_file = request.FILES['excel_file']
+        try:
+            df = pd.read_excel(excel_file, dtype=str)
+            if 'replace' in request.POST:
+                OmData.objects.all().delete()  # Replace existing data
+
+            model_fields = [field.name for field in OmData._meta.fields if field.name != 'id']
+            df_filtered = df[model_fields] if all(col in model_fields for col in df.columns) else df[model_fields]
+
+            saved_count = 0
+            for _, row in df_filtered.iterrows():
+                row_data = {field.name: row[field.name] for field in OmData._meta.fields if field.name != 'id'}
+                try:
+                    OmData.objects.create(**row_data)
+                    saved_count += 1
+                except Exception as e:
+                    print(f"Error for row: {row_data}. Exception: {e}")
+
+            messages.success(request, f"Successfully saved {saved_count} records.")
+            return redirect('upload_om_data')
+
+        except Exception as e:
+            messages.error(request, f"Error uploading file: {e}")
+
+    return render(request, 'om/upload.html')
+
+
+# View to download data as an Excel file
+@login_required
+def download_excel(request):
+    data = OmData.objects.all().values()
+    if data.exists():
+        df = pd.DataFrame(data)
+    else:
+        field_names = [field.name for field in OmData._meta.fields]
+        df = pd.DataFrame(columns=field_names)
+
+    response = HttpResponse(content_type='application/vnd.ms-excel')
+    response['Content-Disposition'] = 'attachment; filename="om_data.xlsx"'
+    df.to_excel(response, index=False)
+    return response
+
+
+# Home view (optional)
+def home(request):
+    return render(request, 'om/home.html')

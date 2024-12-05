@@ -142,6 +142,11 @@ CSRF_TRUSTED_ORIGINS = [
     'http://app.theoddsmaker.com',
     'http://srv642298.hstgr.cloud',
 ]
+# Redirect after successful login
+LOGIN_REDIRECT_URL = '/manage/'
+
+# Redirect after logout
+LOGOUT_REDIRECT_URL = '/login/'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

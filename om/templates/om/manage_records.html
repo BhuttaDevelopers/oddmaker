@@ -29,7 +29,7 @@
 
         .button {
             padding: 10px 20px;
-            background-color: #007bff;
+            background-color: #FF6000;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -42,7 +42,7 @@
         }
 
         .button:hover {
-            background-color: #0056b3;
+            background-color: #FF6010;
             transform: translateY(-2px); /* Slight lift effect */
         }
 
@@ -92,8 +92,15 @@
     </style>
 </head>
 <body>
-    <h1>Admin Pannel</h1>
-    <h2>Manage OM Data</h2>
+    <div style="background:#417690; height:60px; display: flex; align-items: center; justify-content: center;">
+        <h1 style="color:white; margin: 0;">Admin Panel</h1>
+    </div>
+    <center>
+        <div style="background:#79AEC8; height:60px; width: 250px; display: flex; align-items: center; justify-content: center;">
+            <h2 style="margin: 0;">Manage OM Data</h2>
+        </div>
+    </center>
+    
     
     <form method="POST">
         {% csrf_token %}
@@ -101,8 +108,8 @@
     </form>
 
     <div class="object-tools">
-        <a href="{% url 'admin:download_excel' %}" class="button">Download Excel</a>
-        <a href="{% url 'admin:upload_data' %}" class="button">Upload Data</a>
+        <a href="{% url 'upload_om_data' %}" class="button">Upload Excel</a>
+    <a href="{% url 'download_om_data' %}" class="button">Download Excel</a>
     </div>
     
     <table>
