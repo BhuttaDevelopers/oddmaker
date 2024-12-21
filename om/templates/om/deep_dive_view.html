@@ -87,6 +87,11 @@
             color: #C7BA00;
         }
 
+        .divider-row {
+            background-color: #222;
+            height: 5px;
+        }
+
         .download-button {
             display: inline-block;
             margin-bottom: 20px;
@@ -110,7 +115,7 @@
                         name="symbol_{{ i }}"
                         placeholder="Search Symbol {{ i }}"
                         value="{% if search_values|get_item:'symbol_'|add:i %}{{ search_values|get_item:'symbol_'|add:i }}{% else %}{% if forloop.counter == 1 %}AAPL{% elif forloop.counter == 2 %}GOOGL{% elif forloop.counter == 3 %}MSFT{% elif forloop.counter == 4 %}AMZN{% elif forloop.counter == 5 %}TSLA{% elif forloop.counter == 6 %}FB{% elif forloop.counter == 7 %}NFLX{% elif forloop.counter == 8 %}NVDA{% endif %}{% endif %}">
-                    </div>
+                </div>
             {% endfor %}
         </div>
 
@@ -136,7 +141,7 @@
                     {% for item in page_obj %}
                         <td>
                             {% if field_name in percentage_fields %}
-                                {{ item|get_attr:field_name|to_float|floatformat:2 }}%
+                                {{ item|get_attr:field_name|to_float|multiply:100|floatformat:2 }}%
                             {% elif field_name in float_fields %}
                                 {{ item|get_attr:field_name|to_float|floatformat:2 }}
                             {% elif field_name in currency_fields %}
@@ -147,6 +152,41 @@
                         </td>
                     {% endfor %}
                 </tr>
+
+                {% if forloop.counter == 4 %}
+                    <tr class="divider-row">
+                        <td colspan="{{ page_obj|length|add:1 }}">Price Target Estimates:</td>
+                    </tr>
+                {% endif %}
+                
+                {% if forloop.counter == 11 %}
+                    <tr class="divider-row">
+                        <td colspan="{{ page_obj|length|add:1 }}">Letter Grades:</td>
+                    </tr>
+                {% endif %}
+                
+                {% if forloop.counter == 16 %}
+                    <tr class="divider-row">
+                        <td colspan="{{ page_obj|length|add:1 }}">Fundamental Data Points:</td>
+                    </tr>
+                {% endif %}
+                
+                {% if forloop.counter == 62 %}
+                    <tr class="divider-row">
+                        <td colspan="{{ page_obj|length|add:1 }}">Sell Side Revision:</td>
+                    </tr>
+                {% endif %}
+                
+                {% if forloop.counter == 66 %}
+                <tr class="divider-row">
+                    <td colspan="{{ page_obj|length|add:1 }}">Revenue Growth Rates:</td>
+                </tr>
+            {% endif %}
+            {% if forloop.counter == 80 %}
+                <tr class="divider-row">
+                    <td colspan="{{ page_obj|length|add:1 }}">Stock Price Performance:</td>
+                </tr>
+            {% endif %}
             {% endfor %}
         </tbody>
     </table>
@@ -228,37 +268,61 @@
         document.addEventListener("DOMContentLoaded", () => {
             const table = document.getElementById("data-table");
             const rows = table.querySelectorAll("tbody tr");
-        
+            
             rows.forEach((row) => {
                 const cells = row.querySelectorAll("td");
                 let total = 0;
                 let count = 0;
+                let isCurrency = false;
+                let isPercentage = false;
         
-                cells.forEach((cell) => {
-                    const value = parseFloat(cell.textContent.trim().replace(/[%,$]/g, ""));
+                cells.forEach((cell, index) => {
+                    // Skip the first column (symbol) and any non-data cells
+                    if (index === 0) return;
+        
+                    const text = cell.textContent.trim();
+                    const value = parseFloat(text.replace(/[%,$]/g, ""));
+        
                     if (!isNaN(value)) {
                         total += value;
                         count++;
+        
+                        // Detect the type of field (currency or percentage)
+                        if (text.includes("$")) isCurrency = true;
+                        if (text.includes("%")) isPercentage = true;
                     }
                 });
         
                 // Create the average cell and insert it after the symbol cell (first cell)
                 const avgCell = document.createElement("td");
-                avgCell.textContent = count > 0 ? (total / count).toFixed(2) : "-";
+                if (count > 0) {
+                    let average = (total / count).toFixed(2);
+                    if (isCurrency) {
+                        avgCell.textContent = `$${average}`;
+                    } else if (isPercentage) {
+                        avgCell.textContent = `${average}%`;
+                    } else {
+                        avgCell.textContent = average;
+                    }
+                } else {
+                    avgCell.textContent = "-";
+                }
                 avgCell.style.color = "#C7BA00";
-                
+        
                 // Insert it after the first cell
                 row.insertBefore(avgCell, row.cells[1]); // Insert average cell after the first cell
             });
         
+            // Add the "Average" header
             const headerRow = table.querySelector("thead tr");
             const avgHeader = document.createElement("th");
             avgHeader.textContent = "Average";
             avgHeader.style.backgroundColor = "#333";
             
-            // Insert average header after the first header cell (Field header)
-            headerRow.insertBefore(avgHeader, headerRow.cells[1]); // Insert average header after the field header
+            // Insert average header after the field header
+            headerRow.insertBefore(avgHeader, headerRow.cells[1]); // Insert average header after the first header cell
         });
+        
     </script>
 </body>
 </html>

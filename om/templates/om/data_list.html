@@ -139,7 +139,11 @@
         <!-- Long Idea Searches Checkboxes -->
         <div class="search-column">
             <h3>Long Idea Searches</h3>
-            <label><input type="checkbox" name="upside_50" {% if request.GET.upside_50 %}checked{% endif %}> 50% Upside</label>
+            <label>
+                <input type="checkbox" name="Upside_50_SS_Target" 
+                       {% if request.GET.Upside_50_SS_Target %}checked{% endif %}>
+                50% Upside
+            </label>
             <label><input type="checkbox" name="great_but_hated" {% if request.GET.great_but_hated %}checked{% endif %}> Great But Hated</label>
             <label><input type="checkbox" name="gold_mine" {% if request.GET.gold_mine %}checked{% endif %}> GoldMine</label>
             <label><input type="checkbox" name="berkshire_brain" {% if request.GET.berkshire_brain %}checked{% endif %}> Berkshire's Brain</label>
@@ -154,7 +158,11 @@
         <!-- Short Idea Searches Checkboxes -->
         <div class="search-column">
             <h3>Short Idea Searches</h3>
-            <label><input type="checkbox" name="greater_90" {% if request.GET.greater_90 %}checked{% endif %}> 10% Upside</label>
+            <label>
+                <input type="checkbox" name="Greater_90_SS_Target" 
+                       {% if request.GET.Greater_90_SS_Target %}checked{% endif %}>
+                10% Upside
+            </label>
             <label><input type="checkbox" name="short_interest" {% if request.GET.short_interest %}checked{% endif %}> Short Interest</label>
             <label><input type="checkbox" name="liquid_loved_late" {% if request.GET.liquid_loved_late %}checked{% endif %}> Liquid, Loved & Late</label>
             <label><input type="checkbox" name="LandSlide_Risk" {% if request.GET.LandSlide_Risk %}checked{% endif %}> LandslideRisk</label>

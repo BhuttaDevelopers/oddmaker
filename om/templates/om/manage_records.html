@@ -1,5 +1,8 @@
+
 {% load custom_filters %}
 {% load static %}
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,16 +12,18 @@
     <style>
         /* General body and header styles */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
             margin: 20px;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
         }
+    
         h1 {
             color: #333;
             text-align: center;
             margin-bottom: 20px;
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
         }
-
+    
         /* Styling for action buttons */
         .object-tools {
             display: flex;
@@ -26,10 +31,10 @@
             gap: 15px;  /* Space between buttons */
             margin-bottom: 20px; /* Space between buttons and table */
         }
-
+    
         .button {
             padding: 10px 20px;
-            background-color: #FF6000;
+            background-color: #747474;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -39,64 +44,67 @@
             cursor: pointer;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: background-color 0.3s ease, transform 0.2s ease;
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
         }
-
+    
         .button:hover {
-            background-color: #FF6010;
+            background-color: #747474;
             transform: translateY(-2px); /* Slight lift effect */
         }
-
+    
         /* Styling for the table */
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px; /* Extra space between table and buttons */
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
         }
-
+    
         th, td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
-            background-color: #fff;
+            background-color: #ffffff;
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
         }
-
+    
         th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background-color: #ffffff;
+            
         }
-
+    
         td {
             font-size: 14px;
             color: #333;
         }
-
+    
         td[contenteditable="true"] {
-            background-color: #fafafa;
+            background-color: #ffffff;
         }
-
+    
         td button {
             padding: 6px 12px;
-            background-color: #dc3545;
+            background-color: #747474;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s ease, transform 0.2s ease;
+            font-family: 'Segoe UI', 'Segoe UI Web (West European)', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', sans-serif;
         }
-
+    
         td button:hover {
-            background-color: #c82333;
+            background-color: #958999;
             transform: translateY(-1px); /* Hover effect for the delete button */
         }
-
     </style>
+    <div style="width: 100%; background-color:black;" ><center><img src="{% static 'om/images/logo.webp' %}" alt="Logo" style="height: 50px;background:black"</center>></div>
+
+    
 </head>
 <body>
-    <div style="background:#417690; height:60px; display: flex; align-items: center; justify-content: center;">
-        <h1 style="color:white; margin: 0;">Admin Panel</h1>
-    </div>
     <center>
-        <div style="background:#79AEC8; height:60px; width: 250px; display: flex; align-items: center; justify-content: center;">
+        <div style="height:60px; width: 250px; display: flex; align-items: center; justify-content: center;">
             <h2 style="margin: 0;">Manage OM Data</h2>
         </div>
     </center>

@@ -146,7 +146,7 @@ CSRF_TRUSTED_ORIGINS = [
 LOGIN_REDIRECT_URL = '/manage/'
 
 # Redirect after logout
-LOGOUT_REDIRECT_URL = '/login/'
+LOGOUT_REDIRECT_URL = ''
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

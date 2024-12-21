@@ -16,6 +16,8 @@ from django.contrib.auth.views import LoginView, LogoutView
 
 urlpatterns = [
     path('data/', views.om_data_list, name='data_list'),  # List of data
+    path('upside/', views.om_upside, name='upside'),  # List of data
+     path('10upside/', views.om_10upside, name='10upside'),  # List of data 
     path('upload/', views.upload_om_data, name='upload_data'),  # Upload data
     path('download/', views.download_excel, name='download_excel'),  # Download route
     path('', views.om_data_list, name='home'),  # Point root URL to om_data_list

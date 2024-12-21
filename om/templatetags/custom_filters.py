@@ -9,12 +9,11 @@ def get_attr(obj, attr_name):
     return getattr(obj, attr_name, None)
 
 @register.filter
-def index(sequence, i):
-    """Get an item at the specified index in a list or tuple."""
-    try:
-        return sequence[i]
-    except (IndexError, TypeError):
-        return None
+def get_item(dictionary, key):
+    """Retrieve a value from a dictionary by key."""
+    if isinstance(dictionary, dict):
+        return dictionary.get(key, None)
+    return None
 
 @register.filter
 def to_float(value):
@@ -36,29 +35,19 @@ def to_decimal(value):
 def format_currency(value, symbol="$"):
     """Format a value as currency, using a specified currency symbol."""
     try:
-        # Convert to Decimal for accuracy
         value = Decimal(value)
         return f"{symbol}{value:,.2f}"  # Example format: $1,234.56
     except (InvalidOperation, ValueError, TypeError):
-        return value  # Return as-is if conversion fails
+        return value
 
 @register.filter
-def get_item(dictionary, key):
-    """Retrieve a value from a dictionary by key."""
-    if isinstance(dictionary, dict):
-        return dictionary.get(key, None)
-    return None
-
-@register.filter
-def get_item(dictionary, key):
-    """Retrieve a value from a dictionary by key."""
-    if isinstance(dictionary, dict):
-        return dictionary.get(key, None)
-    return None
-@register.filter
-def get_field_value(record, field_name):
-    """Retrieve the value of a field for a given record."""
+def multiply(value, factor):
+    """Multiply a value by a factor."""
     try:
-        return getattr(record, field_name)
-    except AttributeError:
-        return None
+        return float(value) * factor
+    except (ValueError, TypeError):
+        return value
+@register.filter
+def get_field_value(obj, attr_name):
+    """Get an attribute from an object by name."""
+    return getattr(obj, attr_name, None)
