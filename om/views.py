@@ -256,6 +256,7 @@ def om_data_list(request):
         'share_repurchases': request.GET.get('share_repurchases'),
         'greater_90': request.GET.get('greater_90'),
         'short_interest': request.GET.get('short_interest'),
+        'LandSlide_Risk': request.GET.get('LandSlide_Risk'),
         'liquid_loved_late': request.GET.get('liquid_loved_late'),
         'accounting_trouble': request.GET.get('accounting_trouble'),
         'most_expensive': request.GET.get('most_expensive'),
@@ -589,26 +590,30 @@ def deep_dive_view(request):
     # Fetch all OmData records where Score is not null
     om_data = OmData.objects.filter(Score__isnull=False)
 
-    # Define the default symbols
-    default_symbols = ['AAPL', 'GOOGL', 'MSFT', 'AMZN', 'TSLA', 'FB', 'NFLX', 'NVDA']
-    
     # Get search values from request
     search_values = {f"symbol_{i}": request.GET.get(f"symbol_{i}", "").strip() for i in range(1, 9)}
-    
+
     # Create search conditions
     search_conditions = Q()
+    final_symbols = []
 
-    # Populate the search conditions with user input or default symbols
+    # Populate the search conditions with user input only
     for i in range(1, 9):
         symbol = search_values[f'symbol_{i}']
         if symbol:
             search_conditions |= Q(Symbol__iexact=symbol)
-        else:
-            search_conditions |= Q(Symbol__iexact=default_symbols[i - 1])  # Use default if no input
+            final_symbols.append(symbol)  # Track actual symbols
 
     # Filter based on search conditions
     if search_conditions:
         om_data = om_data.filter(search_conditions)
+
+    # Ensure the symbols appear in the same order as the inputs
+    ordered_data = []
+    for symbol in final_symbols:
+        filtered_data = om_data.filter(Symbol__iexact=symbol)
+        if filtered_data.exists():
+            ordered_data.append(filtered_data.first())
 
     # Specify fields for display
     display_fields = [
@@ -690,8 +695,8 @@ def deep_dive_view(request):
     ('Data222', 'Sales & Marketing/Sales Ranking'),  # Convert to number with two decimal points
     ('Data4', 'Gross Margin'),  # Convert to number with two decimal points
     ('Percentile16', 'Gross Margin Ranking'),  # Convert to percentage
-    ('Data88', 'Price/Tangible Book'),  # Convert to number with two decimal points
-    ('Percentile183', 'Price/Tangible Book Ranking'),  # Convert to percentage
+    ('Data15', 'Price/Tangible Book'),  # Convert to number with two decimal points
+    ('Percentile_24', 'Price/Tangible Book Ranking'),  # Convert to percentage
     ('Data14', '1 Month Change EBITDA'),  # Convert to number with two decimal points
     ('Percentile_22', '1 Month Change EBITDA Ranking'),  # Convert to percentage
     ('Data16', '1 Month Change in Revenue'),  # Convert to number with two decimal points
@@ -726,28 +731,28 @@ def deep_dive_view(request):
 
  # Define groups for field formatting
     percentage_fields = [
-        'Price_OM_Target', 'One_Year_Growth', 'Three_Year_Growth', 'Five_Year_Growth', 'SPY3', 'SPY4',
+    'Price_OM_Target', 'One_Year_Growth', 'Three_Year_Growth', 'Five_Year_Growth', 'SPY3', 'SPY4',
     'Percentile', 'Percentile28', 'Percentile20', 'Percentile_6', 'Percentile_3', 'Percentile26',
     'Percentile27', 'Percentile18', 'Percentile_5', 'Percentile_8', 'Percentile22', 'Percentile10',
     'Percentile17', 'Percentile2', 'Percentile_7', 'Percentile_9', 'Percentile_13', 'Percentile12',
-    'Percentile13', 'Percentile14', 'Percentile_22', 'Percentile_23', 'Percentile16', 'Percentile183',
+    'Percentile13', 'Percentile14', 'Percentile_22', 'Percentile_23', 'Percentile16', 'Percentile_24',
     'Percentile24', 'Percentile23', 'Percentile_1', 'Percentile_2', 'Percentile_28', 'Percentile_18',
     'Percentile102', 'Percentile11', 'Percentile5', 'Percentile6', 'Percentile7', 'Percentage_of_Revenue','Data31'
-    , 'Data11', 'Data_8','Data27','Data_7','Data5','Data6','Data20','Data4','Data88', 'P_SS', 'Data16','FCFMarginTrailing', 'Data222'
+    ,'Data11', 'Data_8','Data27','Data_7','Data5','Data6','Data20','Data4','P_SS', 'Data16','FCFMarginTrailing', 'Data222'
     ]
 
     float_fields = [
-    'Score', 'Beta','Data_6', 'Data_3', 'Data22', 'Data12', 'Data14',
+    'Score', 'Beta','Data_6', 'Data_3', 'Data22', 'Data12', 'Data14','Data15',
     'Data26', 'Data30', 'Data28', 'Data29', 'Data10', 'Data_14', 'Data19', 'Data24',
     'Data23', 'Data_1', 'Data_2', 'Data25', 'Data8', 'Data9'
     ]
 
     currency_fields = [
-        'Price', 'OM_Target', 'SS', 'RD_Expenses', 'Stock_Based_Comp','SM_Expenses'
+    'Price', 'OM_Target', 'SS', 'RD_Expenses', 'Stock_Based_Comp','SM_Expenses'
     ]
     # Convert specific fields to their respective formats
     for item in om_data:
-        item.Score = safe_float_conversion(item.Score)
+     item.Score = safe_float_conversion(item.Score)
     item.Price = safe_decimal_conversion(item.Price)
     item.OM_Target = safe_decimal_conversion(item.OM_Target)
 
@@ -878,24 +883,26 @@ def deep_dive_view(request):
     om_data = sorted(om_data, key=lambda x: (x.Score if isinstance(x.Score, (int, float)) else float('-inf')), reverse=True)
 
     # Pagination
-    paginator = Paginator(om_data, 2400)  # Adjust per your needs
-    page_number = request.GET.get('page')
+    paginator = Paginator(om_data, 8)  # Adjust per your needs
+    page_number = request.GET.get('page', 1)
     page_obj = paginator.get_page(page_number)
+    
 
     # Precompute field values for search inputs
     search_field_values = [search_values.get(f"symbol_{i}", "") for i in range(1, 9)]
 
     return render(request, 'om/deep_dive_view.html', {
-        'page_obj': page_obj,
+        "page_obj": ordered_data, 
+        "page_obj": page_obj,
         'field_names': display_fields,
         'field_labels': field_labels,
         'search_values': search_values,
         'search_field_values': search_field_values,
         'search_field_range': list(range(1, 9)),
-        'deciles': deciles,
         'percentage_fields': percentage_fields,
         'float_fields': float_fields,
         'currency_fields': currency_fields,
+        'deciles': deciles,
     })
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
